@@ -1,0 +1,10 @@
+services:
+  giftmanager:
+    build: .
+    image: gm_test:latest
+    container_name: gm_test
+    ports:
+      - "5005:5000"
+    volumes:
+      - /home/mike/giftmanager/gm_test_data:/app/data/
+    restart: unless-stopped
