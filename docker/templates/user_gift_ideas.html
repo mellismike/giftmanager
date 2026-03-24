@@ -313,7 +313,7 @@
                                 {{ get_full_name(gift_idea.bought_by) }}
                             {% endif %}
                         </p>
-                    {% if gift_idea.bought_by == session['username'] %}
+                    {% if gift_idea.bought_by == session['username'] and not is_kid %}
                     <button class="bg-red-500 text-white px-3 py-1 rounded mark-as-not-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">Cancel the purchase</button>
                     {% endif %}
                     {% else %}

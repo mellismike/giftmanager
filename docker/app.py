@@ -1069,6 +1069,7 @@ def dashboard():
         'birthday': current_user.get('birthday'),
         'admin': current_user.get('admin'),
         'guest': is_guest,
+        'kid': current_user.get('kid', False),
         'avatar': current_user.get('avatar', None)
     }
 
@@ -1153,6 +1154,12 @@ def find_idea_by_id(ideas, idea_id):
 def mark_as_bought(idea_id):
     # Load the current gift ideas from the JSON file
     gift_ideas_data = load_gift_ideas()
+    
+    users = load_users()
+    current_user = next((u for u in users if u['username'] == session['username']), None)
+    if current_user and current_user.get('kid'):
+        flash('Kid accounts are not permitted to purchase items.', 'danger')
+        return redirect(url_for('dashboard'))
 
     # Find the idea by its ID
     idea = find_idea_by_id(gift_ideas_data, idea_id)
@@ -1191,6 +1198,11 @@ def mark_as_not_bought(idea_id):
     # Load the current gift ideas from the JSON file
     gift_ideas_data = load_gift_ideas()
 
+    users = load_users()
+    current_user = next((u for u in users if u['username'] == session['username']), None)
+    if current_user and current_user.get('kid'):
+        return '', 403
+
     # Find the idea by its ID
     idea = find_idea_by_id(gift_ideas_data, idea_id)
 
@@ -1219,6 +1231,11 @@ def bought_items():
     # Load the current gift ideas and users from the JSON files
     gift_ideas_data = load_gift_ideas()
     users = load_users()
+
+    current_user = next((u for u in users if u['username'] == session['username']), None)
+    if current_user and current_user.get('kid'):
+        flash('Kid accounts do not have a purchased items list.', 'danger')
+        return redirect(url_for('dashboard'))
 
     # Filter the gift ideas to include only the ones that are bought by the current user
     bought_items = [idea for idea in gift_ideas_data if idea['bought_by'] == session['username']]
