@@ -262,18 +262,19 @@
                                 <th class="px-4 py-2 w-1/6">Email</th>
                                 <th class="px-4 py-2 w-1/6">Avatar</th>
                                 <th class="px-4 py-2 w-1/6">Admin</th>
+                                <th class="px-4 py-2 w-1/6">Kid</th>
                                 <th class="px-4 py-2 w-1/6">Actions</th>
                             </tr>
                         </thead>
                         <tbody style="background-color: var(--section-bg-color);">
                             {% for user in users %}
                             <tr class="border-b" style="background-color: var(--section-bg-color); border-bottom: var(--section-bg-color);">
-                                <td colspan="6" class="px-4 py-2" style="background-color: var(--section-bg-color);">
+                                <td colspan="7" class="px-4 py-2" style="background-color: var(--section-bg-color);">
                                     <form action="{{ url_for('manage_users') }}" method="POST" enctype="multipart/form-data" id="user-form-{{ user[0] }}">
                                         <input type="hidden" name="username" value="{{ user[0] }}">
                                         
                                     <div class="rounded-lg border bg-gray-50 p-4 mb-4 shadow-sm" style="margin: 0; background-color: var(--section-bg-color);">
-                                        <div class="grid grid-cols-6 gap-4">
+                                        <div class="grid grid-cols-7 gap-4">
                                                 <!-- Display View -->
                                             <div class="flex justify-center items-center">{{ user[0] }}</div>
                                             <div class="flex justify-center items-center">{{ user[1] }}</div>
@@ -290,6 +291,16 @@
                                                             {% if user[0] == session['username'] %} disabled {% endif %}
                                                             onclick="return confirm('Are you sure you want to change admin status?')">
                                                         {{ 'Make Admin' if user[4] == 0 else 'Revoke Admin' }}
+                                                    </button>
+                                                </div>
+                                            <div class="flex justify-center items-center">
+                                                    <!-- Kid toggle button -->
+                                                    <button type="submit" 
+                                                            name="toggle_kid" 
+                                                            value="{{ '1' if user[5] == 0 else '0' }}"
+                                                            class="px-3 py-1 rounded {{ 'bg-yellow-500 text-white' if user[5] else 'bg-gray-500 text-white' }}" 
+                                                            onclick="return confirm('Are you sure you want to change kid status?')">
+                                                        {{ 'Remove Kid Status' if user[5] else 'Set as Kid' }}
                                                     </button>
                                                 </div>
                                                 <div class="flex justify-center items-center space-x-2">

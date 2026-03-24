@@ -1293,7 +1293,8 @@ def user_gift_ideas(selected_user_id):
         user_namels=user_namels,
         imgenabled=imgenabled,
         hide_purchaser=hide_purchaser,
-        is_shared_list_member=is_shared_list_member)
+        is_shared_list_member=is_shared_list_member,
+        is_kid=is_kid)
 
 
 @app.route('/my_ideas')
