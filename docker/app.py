@@ -618,6 +618,7 @@ def register():
             "avatar": avatar,
             "admin": False,
             "guest": False,
+            "kid": False,
             "groups": []  # New users start with no groups by default
         }
         
@@ -1262,20 +1263,27 @@ def user_gift_ideas(selected_user_id):
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     hide_purchaser = read_env_variable('HIDE_PURCHASER', 'user_choice')
 
+    users = load_users()
+    current_user_obj = next((u for u in users if u['username'] == connected_user), None)
+    is_kid = current_user_obj.get('kid', False) if current_user_obj else False
+
     # Ensure each idea has custom_fields and last_updated fields for template
     for idea in user_gift_ideas:
         if 'custom_fields' not in idea:
             idea['custom_fields'] = {}
-        # Replace bought_by if bought anonymously or globally hiding purchaser, for not leaking the info, but not for items bought by current user
-        if ('bought_by' in idea and
-            idea['bought_by'] and 
-            idea['bought_by'] != connected_user and
-            (('bought_anonymously' in idea and 
-                idea['bought_anonymously'] == True ) or
-            hide_purchaser)):
-            idea['bought_by'] = "Anonymous"
+            
+        if is_kid:
+            idea['bought_by'] = None
+        else:
+            # Replace bought_by if bought anonymously or globally hiding purchaser, for not leaking the info, but not for items bought by current user
+            if ('bought_by' in idea and
+                idea['bought_by'] and 
+                idea['bought_by'] != connected_user and
+                (('bought_anonymously' in idea and 
+                    idea['bought_anonymously'] == True ) or
+                hide_purchaser)):
+                idea['bought_by'] = "Anonymous"
 
-    users = load_users()
     shared_list = next((user for user in users if user['username'] == selected_user_id and user.get('shared_list')), None)
     is_shared_list_member = shared_list and connected_user in shared_list.get('list_members', [])
     # Call get_full_name function to fetch the user's full name directly in the route
@@ -1561,6 +1569,7 @@ def add_user():
             "full_name": full_name,
             "birthday": birthday,
             "admin": False,
+            "kid": False,
             "email": email if email else "",
             "avatar": avatar if avatar else "default.svg",  # Always set a default
             "groups": []  # New user starts with no groups
@@ -1974,6 +1983,18 @@ def manage_users():
                     flash('Admin status updated successfully!', 'success')
                     break
 
+        # Handle toggle kid
+        elif 'toggle_kid' in request.form:
+            for user in users:
+                if user['username'] == username:
+                    user['kid'] = bool(int(request.form['toggle_kid']))
+                    # Also update in all_users to maintain consistency
+                    for u in all_users:
+                        if u['username'] == username and not u.get('shared_list'):
+                            u['kid'] = bool(int(request.form['toggle_kid']))
+                    flash('Kid status updated successfully!', 'success')
+                    break
+
         # Handle user details update
         else:
             updated_name = request.form.get('name')
@@ -2054,7 +2075,8 @@ def manage_users():
             user['full_name'], 
             user.get('email', 'N/A'),
             user.get('avatar', 'avatar1.png'),
-            user.get('admin', 'N/A')
+            user.get('admin', 'N/A'),
+            user.get('kid', False)
         )
         for user in users
     ]
@@ -2587,6 +2609,7 @@ def manage_guest_users():
             "full_name": display_name,
             "admin": False,
             "guest": True,
+            "kid": False,
             "access_type": access_type,
             "groups": [],
             "access_users": []
