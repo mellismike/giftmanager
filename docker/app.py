@@ -1335,6 +1335,10 @@ def my_ideas():
     # Load the gift ideas from the JSON file using load_gift_ideas()
     gift_ideas_data = load_gift_ideas()
 
+    users = load_users()
+    current_user_obj = next((u for u in users if u['username'] == connected_user), None)
+    is_kid = current_user_obj.get('kid', False) if current_user_obj else False
+
     # Filter the gift ideas to include only the ones added by the connected user
     my_gift_ideas = [idea for idea in gift_ideas_data if idea['user_id'] == connected_user and idea.get('added_by') == connected_user]
 
@@ -1356,7 +1360,7 @@ def my_ideas():
         if 'custom_fields' not in idea:
             idea['custom_fields'] = {}
 
-    return render_template('my_ideas.html', my_gift_ideas=active_ideas, archived_ideas=archived_ideas, reordering=reordering, imgenabled=imgenabled)
+    return render_template('my_ideas.html', my_gift_ideas=active_ideas, archived_ideas=archived_ideas, reordering=reordering, imgenabled=imgenabled, is_kid=is_kid)
 
 @app.route('/archive_purchased', methods=['POST'])
 @login_required
@@ -1367,10 +1371,20 @@ def archive_purchased():
     target_user_id = request.form.get('target_user_id', connected_user)
     
     users = load_users()
+    current_user_obj = next((u for u in users if u['username'] == connected_user), None)
+    is_admin = current_user_obj.get('admin', False) if current_user_obj else False
+    is_kid = current_user_obj.get('kid', False) if current_user_obj else False
+
     if target_user_id != connected_user:
         shared_list = next((user for user in users if user['username'] == target_user_id and user.get('shared_list')), None)
-        if not shared_list or shared_list.get('list_owner') != connected_user:
+        if is_admin:
+            pass
+        elif not shared_list or shared_list.get('list_owner') != connected_user:
             flash("You do not have permission to move items for this list.", "danger")
+            return redirect(url_for('dashboard'))
+    else:
+        if is_kid:
+            flash("Kid accounts cannot move items to completed.", "danger")
             return redirect(url_for('dashboard'))
 
     archived_count = 0
@@ -2090,6 +2104,21 @@ def manage_users():
                             u['kid'] = bool(int(request.form['toggle_kid']))
                     flash('Kid status updated successfully!', 'success')
                     break
+
+        # Handle archive purchases
+        elif 'archive_purchases' in request.form:
+            gift_ideas_data = load_gift_ideas()
+            archived_count = 0
+            for idea in gift_ideas_data:
+                if idea['user_id'] == username and idea.get('bought_by'):
+                    if not idea.get('archived'):
+                        idea['archived'] = True
+                        archived_count += 1
+            if archived_count > 0:
+                save_gift_ideas(gift_ideas_data)
+                flash(f'Moved {archived_count} purchased items to completed for {username}.', 'success')
+            else:
+                flash(f'No purchased items found to move for {username}.', 'info')
 
         # Handle user details update
         else:

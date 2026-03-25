@@ -236,7 +236,7 @@
     <main class="main container mx-auto p-8">
         <section class="section shadow-lg rounded-lg p-6">
             <h1 class="text-2xl font-semibold mb-4 text-primary">Ideas list for {{ user_namels }}</h1>
-            {% if is_owner %}
+            {% if is_owner and not is_kid %}
             <form action="{{ url_for('archive_purchased') }}" method="POST" class="mb-4">
                 <input type="hidden" name="target_user_id" value="{{ request.view_args.get('selected_user_id', '') }}">
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
