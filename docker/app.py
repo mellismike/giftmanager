@@ -1267,25 +1267,37 @@ def user_gift_ideas(selected_user_id):
 
     # Filter the gift ideas for the selected user
     gift_ideas_data = load_gift_ideas()  # Load the gift ideas from the JSON file
-    user_gift_ideas = [idea for idea in gift_ideas_data if idea['user_id'] == selected_user_id]
+    
+    users = load_users()
+    shared_list = next((user for user in users if user['username'] == selected_user_id and user.get('shared_list')), None)
+    is_shared_list_member = shared_list and connected_user in shared_list.get('list_members', [])
+    is_owner = shared_list and shared_list.get('list_owner') == connected_user
+
+    if is_owner:
+        user_gift_ideas_all = [idea for idea in gift_ideas_data if idea['user_id'] == selected_user_id]
+        user_gift_ideas = [idea for idea in user_gift_ideas_all if not idea.get('archived')]
+        archived_ideas = [idea for idea in user_gift_ideas_all if idea.get('archived')]
+        archived_ideas.sort(key=lambda x: (x.get('priority', float('inf')), x['gift_idea_id']))
+    else:
+        user_gift_ideas = [idea for idea in gift_ideas_data if idea['user_id'] == selected_user_id and not idea.get('archived')]
+        archived_ideas = []
 
     # Sort the gift ideas by priority, with ideas that have no priority appearing at the bottom
     user_gift_ideas.sort(key=lambda x: (x.get('priority', float('inf')), x['gift_idea_id']))
 
     # Check if there are no ideas and redirect to the NOIDEA page
-    if not user_gift_ideas:
+    if not user_gift_ideas and not archived_ideas:
         flash('No gift ideas for this user.', 'info')
         return redirect(url_for('noidea'))
     
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     hide_purchaser = read_env_variable('HIDE_PURCHASER', 'user_choice')
 
-    users = load_users()
     current_user_obj = next((u for u in users if u['username'] == connected_user), None)
     is_kid = current_user_obj.get('kid', False) if current_user_obj else False
 
     # Ensure each idea has custom_fields and last_updated fields for template
-    for idea in user_gift_ideas:
+    for idea in user_gift_ideas + archived_ideas:
         if 'custom_fields' not in idea:
             idea['custom_fields'] = {}
             
@@ -1301,12 +1313,12 @@ def user_gift_ideas(selected_user_id):
                 hide_purchaser)):
                 idea['bought_by'] = "Anonymous"
 
-    shared_list = next((user for user in users if user['username'] == selected_user_id and user.get('shared_list')), None)
-    is_shared_list_member = shared_list and connected_user in shared_list.get('list_members', [])
     # Call get_full_name function to fetch the user's full name directly in the route
     user_namels = get_full_name(selected_user_id)  # Get the full name based on the selected user ID
     return render_template('user_gift_ideas.html',
         user_gift_ideas=user_gift_ideas,
+        archived_ideas=archived_ideas,
+        is_owner=is_owner,
         user_namels=user_namels,
         imgenabled=imgenabled,
         hide_purchaser=hide_purchaser,
@@ -1326,21 +1338,87 @@ def my_ideas():
     # Filter the gift ideas to include only the ones added by the connected user
     my_gift_ideas = [idea for idea in gift_ideas_data if idea['user_id'] == connected_user and idea.get('added_by') == connected_user]
 
+    active_ideas = [idea for idea in my_gift_ideas if not idea.get('archived')]
+    archived_ideas = [idea for idea in my_gift_ideas if idea.get('archived')]
+
     # Sort the gift ideas by priority, with ideas that have no priority appearing at the bottom
-    my_gift_ideas.sort(key=lambda x: (x.get('priority', float('inf')), x['gift_idea_id']))
+    active_ideas.sort(key=lambda x: (x.get('priority', float('inf')), x['gift_idea_id']))
+    archived_ideas.sort(key=lambda x: (x.get('priority', float('inf')), x['gift_idea_id']))
 
     reordering = read_env_variable('REORDERING', 'true').lower() == 'true'
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     # Check if there are no ideas and redirect to a different page
-    if not my_gift_ideas:
+    if not active_ideas and not archived_ideas:
         flash('You haven\'t added any gift ideas.', 'info')
         return redirect(url_for('noidea'))
     # Ensure each idea has custom_fields and last_updated fields for template
-    for idea in my_gift_ideas:
+    for idea in active_ideas + archived_ideas:
         if 'custom_fields' not in idea:
             idea['custom_fields'] = {}
 
-    return render_template('my_ideas.html', my_gift_ideas=my_gift_ideas, reordering=reordering, imgenabled=imgenabled)
+    return render_template('my_ideas.html', my_gift_ideas=active_ideas, archived_ideas=archived_ideas, reordering=reordering, imgenabled=imgenabled)
+
+@app.route('/archive_purchased', methods=['POST'])
+@login_required
+def archive_purchased():
+    gift_ideas_data = load_gift_ideas()
+    connected_user = session.get('username')
+    
+    target_user_id = request.form.get('target_user_id', connected_user)
+    
+    users = load_users()
+    if target_user_id != connected_user:
+        shared_list = next((user for user in users if user['username'] == target_user_id and user.get('shared_list')), None)
+        if not shared_list or shared_list.get('list_owner') != connected_user:
+            flash("You do not have permission to move items for this list.", "danger")
+            return redirect(url_for('dashboard'))
+
+    archived_count = 0
+    for idea in gift_ideas_data:
+        if idea['user_id'] == target_user_id and idea.get('bought_by'):
+            if not idea.get('archived'):
+                idea['archived'] = True
+                archived_count += 1
+                
+    if archived_count > 0:
+        save_gift_ideas(gift_ideas_data)
+        flash(f'Moved {archived_count} purchased items to completed.', 'success')
+    else:
+        flash('No purchased items found to move.', 'info')
+        
+    if target_user_id == connected_user:
+        return redirect(url_for('my_ideas'))
+    else:
+        return redirect(url_for('user_gift_ideas', selected_user_id=target_user_id))
+
+@app.route('/unarchive_idea/<int:idea_id>', methods=['POST'])
+@login_required
+def unarchive_idea(idea_id):
+    gift_ideas_data = load_gift_ideas()
+    idea = find_idea_by_id(gift_ideas_data, idea_id)
+    connected_user = session.get('username')
+    
+    if idea:
+        target_user_id = idea['user_id']
+        users = load_users()
+        is_owner = target_user_id == connected_user
+        if not is_owner:
+            shared_list = next((user for user in users if user['username'] == target_user_id and user.get('shared_list')), None)
+            if shared_list and shared_list.get('list_owner') == connected_user:
+                is_owner = True
+                
+        if is_owner:
+            idea['archived'] = False
+            save_gift_ideas(gift_ideas_data)
+            flash('Item moved back to active list.', 'success')
+        else:
+            flash('Permission denied.', 'danger')
+            
+        if target_user_id == connected_user:
+            return redirect(url_for('my_ideas'))
+        else:
+            return redirect(url_for('user_gift_ideas', selected_user_id=target_user_id))
+    return redirect(url_for('dashboard'))
 
 @app.route('/update_order', methods=['POST'])
 @login_required
@@ -3040,7 +3118,7 @@ def shared_list(token):
     # Get gift ideas for the share owner (could be individual user or shared list)
     user_gift_ideas = [
         idea for idea in gift_ideas_data 
-        if idea['user_id'] == share_owner['username']
+        if idea['user_id'] == share_owner['username'] and not idea.get('archived')
     ]
     
     # Sort by priority

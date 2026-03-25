@@ -250,6 +250,11 @@
     <main class="main container mx-auto p-8">
         <section class="section shadow-lg rounded-lg p-6">
             <h1 class="text-2xl font-semibold mb-4">My List of Ideas</h1>
+            <form action="{{ url_for('archive_purchased') }}" method="POST" class="mb-4">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
+                    Move Purchased to Completed
+                </button>
+            </form>
             {% if reordering %}
                 <button id="toggleReorder" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">Reorder</button>
                 <button id="saveReorder" class="bg-green-500 text-white px-4 py-2 rounded mb-4 hidden">Save Order</button>
@@ -318,6 +323,53 @@
                 </li>
                 {% endfor %}
             </ul>
+
+            {% if archived_ideas %}
+            <div class="mt-8">
+                <button onclick="document.getElementById('completed-items').classList.toggle('hidden')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded w-full text-left flex justify-between items-center transition-colors shadow">
+                    <span>Completed Purchased Items ({{ archived_ideas|length }})</span>
+                    <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="completed-items" class="hidden mt-4">
+                    <ul class="space-y-4">
+                        {% for gift_idea in archived_ideas %}
+                        <li class="idea-item p-4 shadow-md rounded-lg flex flex-col sm:flex-row items-start sm:items-center opacity-75" style="background-color: var(--card-bg-color);" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                            <div class="flex-1">
+                                <h2 class="text-lg font-semibold line-through">{{ gift_idea.gift_name }}</h2>
+                                {% if gift_idea.get('custom_fields') %}
+                                <div class="custom-fields flex flex-wrap gap-1 mt-1 mb-1">
+                                    {% for key, value in gift_idea.custom_fields.items() %}
+                                        {% if key and value %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ key }}: {{ value }}
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <p class="sec-text description" style="white-space: pre-wrap;">{{ gift_idea.description }}</p>
+                                {% if gift_idea.value %}
+                                <p class="text-gray-600 sec-text">Estimated Value: {{ format_currency(gift_idea.value) }}</p>
+                                {% endif %}
+                                <p class="sec-text">Added By: {{ gift_idea.added_by }}</p>
+                            </div>
+
+                            <div class="idea-actions flex items-center space-x-2 mt-4 sm:mt-0 sm:ml-4">
+                                <form action="{{ url_for('unarchive_idea', idea_id=gift_idea.gift_idea_id) }}" method="POST" class="inline">
+                                    <button type="submit" class="text-sm text-blue-500 hover:text-blue-700 underline mr-2">Move back to Active</button>
+                                </form>
+                                {% if gift_idea.added_by == session['username'] %}
+                                <button class="bg-red-500 text-white px-3 py-1 rounded delete-idea-button flex justify-center items-center" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                    <img src="{{ url_for('static', filename='icons/delete.svg') }}" alt="Delete Icon" class="h-5 w-5">
+                                </button>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
         </section>
     </main>
     <script>
