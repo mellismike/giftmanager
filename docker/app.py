@@ -2193,6 +2193,8 @@ def manage_users():
         all_users = load_users()
         users = [user for user in all_users if not user.get('guest', False) and not user.get('shared_list', False)]
 
+    gift_ideas_data = load_gift_ideas()
+
     # Transform users into tuples for the template
     users_data = [
         (
@@ -2201,7 +2203,8 @@ def manage_users():
             user.get('email', 'N/A'),
             user.get('avatar', 'avatar1.png'),
             user.get('admin', 'N/A'),
-            user.get('kid', False)
+            user.get('kid', False),
+            sum(1 for idea in gift_ideas_data if idea['user_id'] == user['username'] and idea.get('bought_by') and not idea.get('archived'))
         )
         for user in users
     ]
