@@ -2674,20 +2674,20 @@ def fetch_og_image(url):
         response.raise_for_status()  # Raise an error for bad status codes
         soup = BeautifulSoup(response.text, 'html.parser')
 
-            title = None
-            og_title = soup.find('meta', property='og:title')
-            if og_title and og_title.get('content'):
-                title = og_title.get('content').strip()
-            elif soup.title and soup.title.string:
-                title = soup.title.string.strip()
-                
-            # Amazon specific title fallback
-            if 'amazon' in url.lower() and not title:
-                amazon_title = soup.find('span', id='productTitle')
-                if amazon_title:
-                    title = amazon_title.text.strip()
+        title = None
+        og_title = soup.find('meta', property='og:title')
+        if og_title and og_title.get('content'):
+            title = og_title.get('content').strip()
+        elif soup.title and soup.title.string:
+            title = soup.title.string.strip()
+            
+        # Amazon specific title fallback
+        if 'amazon' in url.lower() and not title:
+            amazon_title = soup.find('span', id='productTitle')
+            if amazon_title:
+                title = amazon_title.text.strip()
 
-            image_url = None
+        image_url = None
 
         # Try to get the og:image tag
         og_image = soup.find('meta', property='og:image')
@@ -2698,31 +2698,31 @@ def fetch_og_image(url):
                 image_url = urljoin(url, image_url)
 
         # Fallback to twitter:image if og:image is not found
-            if not image_url:
-                twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
-                if twitter_image:
-                    image_url = twitter_image.get('content')
-                    if not image_url.startswith('http'):
-                        image_url = urljoin(url, image_url)
+        if not image_url:
+            twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
+            if twitter_image:
+                image_url = twitter_image.get('content')
+                if not image_url.startswith('http'):
+                    image_url = urljoin(url, image_url)
 
         # Fallback to image_src if og:image and twitter:image are not found
-            if not image_url:
-                image_src = soup.find('link', rel='image_src')
-                if image_src:
-                    image_url = image_src.get('href')
+        if not image_url:
+            image_src = soup.find('link', rel='image_src')
+            if image_src:
+                image_url = image_src.get('href')
+                if not image_url.startswith('http'):
+                    image_url = urljoin(url, image_url)
+        
+        # Amazon-specific fallback: look for their primary product image IDs
+        if not image_url and 'amazon' in url.lower():
+            amazon_img = soup.find('img', id='landingImage') or soup.find('img', id='imgBlkFront')
+            if amazon_img:
+                image_url = amazon_img.get('data-old-hires') or amazon_img.get('src')
+                if image_url and not image_url.startswith('data:'):
                     if not image_url.startswith('http'):
                         image_url = urljoin(url, image_url)
-            
-        # Amazon-specific fallback: look for their primary product image IDs
-            if not image_url and 'amazon' in url.lower():
-                amazon_img = soup.find('img', id='landingImage') or soup.find('img', id='imgBlkFront')
-                if amazon_img:
-                    image_url = amazon_img.get('data-old-hires') or amazon_img.get('src')
-                    if image_url and not image_url.startswith('data:'):
-                        if not image_url.startswith('http'):
-                            image_url = urljoin(url, image_url)
 
-            return {'image_url': image_url, 'title': title}
+        return {'image_url': image_url, 'title': title}
     except Exception as e:
         print(f"Error fetching metadata: {e}")
         return {'image_url': None, 'title': None}
