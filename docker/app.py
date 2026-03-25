@@ -1722,6 +1722,7 @@ def edit_idea(idea_id):
             if request.method == 'POST':
 
                 # Update idea details with submitted form data
+                idea['gift_name'] = request.form.get('name', idea['gift_name'])
                 idea['description'] = request.form.get('description', '')
                 idea['link'] = request.form.get('link', '')
                 idea['value'] = request.form.get('value', None)
@@ -2664,9 +2665,29 @@ def run_script():
 
 def fetch_og_image(url):
     try:
-        response = requests.get(url, verify=False)
+        # Use realistic browser headers to bypass basic bot protections on sites like Amazon
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
+        response = requests.get(url, headers=headers, verify=False, timeout=10)
         response.raise_for_status()  # Raise an error for bad status codes
         soup = BeautifulSoup(response.text, 'html.parser')
+
+            title = None
+            og_title = soup.find('meta', property='og:title')
+            if og_title and og_title.get('content'):
+                title = og_title.get('content').strip()
+            elif soup.title and soup.title.string:
+                title = soup.title.string.strip()
+                
+            # Amazon specific title fallback
+            if 'amazon' in url.lower() and not title:
+                amazon_title = soup.find('span', id='productTitle')
+                if amazon_title:
+                    title = amazon_title.text.strip()
+
+            image_url = None
 
         # Try to get the og:image tag
         og_image = soup.find('meta', property='og:image')
@@ -2675,28 +2696,36 @@ def fetch_og_image(url):
             # Convert relative URL to absolute URL if necessary
             if not image_url.startswith('http'):
                 image_url = urljoin(url, image_url)
-            return image_url
 
         # Fallback to twitter:image if og:image is not found
-        twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
-        if twitter_image:
-            image_url = twitter_image.get('content')
-            if not image_url.startswith('http'):
-                image_url = urljoin(url, image_url)
-            return image_url
+            if not image_url:
+                twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
+                if twitter_image:
+                    image_url = twitter_image.get('content')
+                    if not image_url.startswith('http'):
+                        image_url = urljoin(url, image_url)
 
         # Fallback to image_src if og:image and twitter:image are not found
-        image_src = soup.find('link', rel='image_src')
-        if image_src:
-            image_url = image_src.get('href')
-            if not image_url.startswith('http'):
-                image_url = urljoin(url, image_url)
-            return image_url
+            if not image_url:
+                image_src = soup.find('link', rel='image_src')
+                if image_src:
+                    image_url = image_src.get('href')
+                    if not image_url.startswith('http'):
+                        image_url = urljoin(url, image_url)
+            
+        # Amazon-specific fallback: look for their primary product image IDs
+            if not image_url and 'amazon' in url.lower():
+                amazon_img = soup.find('img', id='landingImage') or soup.find('img', id='imgBlkFront')
+                if amazon_img:
+                    image_url = amazon_img.get('data-old-hires') or amazon_img.get('src')
+                    if image_url and not image_url.startswith('data:'):
+                        if not image_url.startswith('http'):
+                            image_url = urljoin(url, image_url)
 
-        return None  # No image found
+            return {'image_url': image_url, 'title': title}
     except Exception as e:
-        print(f"Error fetching OG image: {e}")
-        return None
+        print(f"Error fetching metadata: {e}")
+        return {'image_url': None, 'title': None}
 
 @app.route('/fetch_og_image', methods=['GET'])
 def get_og_image():
@@ -2704,11 +2733,19 @@ def get_og_image():
     if not url:
         return jsonify({"error": "URL parameter is required"}), 400
 
-    og_image_url = fetch_og_image(url)
-    if og_image_url:
-        return jsonify({"og_image_url": og_image_url})
+    metadata = fetch_og_image(url)
+    response_data = {}
+    
+    if metadata.get('image_url'):
+        response_data['og_image_url'] = metadata['image_url']
+        
+    if metadata.get('title'):
+        response_data['title'] = metadata['title']
+        
+    if response_data:
+        return jsonify(response_data)
     else:
-        return jsonify({"error": "No OG image found"}), 404    
+        return jsonify({"error": "No metadata found"}), 404
 
 @app.route('/manage_guest_users', methods=['GET', 'POST'])
 @admin_required

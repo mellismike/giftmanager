@@ -121,14 +121,14 @@ async function fetchOGImage(url) {
     try {
         const response = await fetch(`/fetch_og_image?url=${encodeURIComponent(url)}`);
         const data = await response.json();
-        if (data.og_image_url) {
-            return data.og_image_url;
+            if (data.og_image_url || data.title) {
+                return data;
         } else {
-            console.error('No OG image found:', data.error);
+                console.error('No metadata found:', data.error);
             return null;
         }
     } catch (error) {
-        console.error('Error fetching OG image:', error);
+            console.error('Error fetching metadata:', error);
         return null;
     }
 }
@@ -153,10 +153,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = linkInput.value.trim();
         if (url) {
             try {
-                const ogImage = await fetchOGImage(url);
-                if (ogImage) {
-                    imageContainer.innerHTML = `<img src="${ogImage}" alt="OG Image" class="w-full rounded shadow-lg mt-4">`;
-                    document.getElementById('imagePath').value = ogImage; // Store the image URL in a hidden input
+                const metadata = await fetchOGImage(url);
+                
+                if (metadata && metadata.title) {
+                    const nameInput = document.getElementById('name');
+                    if (!nameInput.value || nameInput.value.trim() === '') {
+                        nameInput.value = metadata.title;
+                    }
+                }
+                
+                if (metadata && metadata.og_image_url) {
+                    imageContainer.innerHTML = `<img src="${metadata.og_image_url}" alt="OG Image" class="w-full rounded shadow-lg mt-4">`;
+                    document.getElementById('imagePath').value = metadata.og_image_url; // Store the image URL in a hidden input
                     manualImageUrlContainer.style.display = 'none'; // Hide the manual image URL container
                 } else {
                     imageContainer.innerHTML = '<p class="text-red-500">No OG image found. Enter an image URL below.</p>';
