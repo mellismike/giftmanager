@@ -1339,8 +1339,8 @@ def my_ideas():
     current_user_obj = next((u for u in users if u['username'] == connected_user), None)
     is_kid = current_user_obj.get('kid', False) if current_user_obj else False
 
-    # Filter the gift ideas to include only the ones added by the connected user
-    my_gift_ideas = [idea for idea in gift_ideas_data if idea['user_id'] == connected_user and idea.get('added_by') == connected_user]
+    # Filter the gift ideas to include all ideas on the connected user's list
+    my_gift_ideas = [idea for idea in gift_ideas_data if idea['user_id'] == connected_user]
 
     active_ideas = [idea for idea in my_gift_ideas if not idea.get('archived')]
     archived_ideas = [idea for idea in my_gift_ideas if idea.get('archived')]
