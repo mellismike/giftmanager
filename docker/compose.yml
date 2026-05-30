@@ -1,0 +1,10 @@
+services:
+  giftmanager:
+    build: .
+    image: giftmanager:latest
+    container_name: giftmanager
+    ports:
+      - "5000:5000"
+    volumes:
+      - /home/mike/giftmanager/data:/app/data/
+    restart: unless-stopped
