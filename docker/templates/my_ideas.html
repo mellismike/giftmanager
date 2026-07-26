@@ -502,47 +502,34 @@
         }
 
         // Event listener for saving the reordered ideas
-       saveButton.addEventListener('click', () => {
-            const reorderedIdeas = [];
-
-            // Get ALL ideas (don't sort them)
-            const ideasArray = Array.from(document.querySelectorAll('.idea-item'));
-            
-            // Use the actual input values from users, not automatic numbering
-            ideasArray.forEach((idea) => {
-                const priorityInput = idea.querySelector('.priority-input');
-                let priorityValue = priorityInput.value.trim();
-                
-                // Send empty string for empty inputs (backend will delete the field)
-                if (priorityValue === '') {
-                    priorityValue = '';
-                } else {
-                    // Convert to number for valid inputs
-                    priorityValue = parseInt(priorityValue);
-                    if (isNaN(priorityValue) || priorityValue <= 0) {
-                        priorityValue = '';
-                    }
-                }
-                
-                reorderedIdeas.push({
-                    gift_idea_id: idea.getAttribute('data-idea-id'),
-                    priority: priorityValue
+        saveButton.addEventListener('click', () => {
+            const order = [];
+            // After dragging, the visual order is the new order.
+            // We read the items in their current order in the DOM.
+            document.querySelectorAll('#ideasList .idea-item').forEach((item, index) => {
+                const ideaId = item.dataset.ideaId;
+                // The priority is now determined by the order in the list.
+                order.push({
+                    gift_idea_id: ideaId,
+                    priority: index + 1
                 });
             });
-
-
+        
             // Send updated order to the server
             fetch('/update_order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order: reorderedIdeas })
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ order: order }),
             })
-            .then(response => response.text())
-            .then(data => {
-                console.log('Success:', data);
-                window.location.reload();
-            })
-            .catch(error => console.error('Error:', error));
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to save order.');
+                }
+            });
         });
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
