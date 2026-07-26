@@ -319,12 +319,12 @@
                             <img src="{{ url_for('static', filename='icons/link.svg') }}" alt="Open Link Icon" class="h-5 w-5">
                         </a>
                         {% endif %}
-                        {% if not gift_idea.bought_by %}
+                        {% if gift_idea.bought_by == session['username'] %}
+                        <p class="text-green-500">Purchased by: Me</p>
+                        {% else %}
                         <button class="bg-green-500 text-white px-3 py-1 rounded mark-own-as-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
                             I purchased this item
                         </button>
-                        {% else %}
-                        <p class="text-green-500">Purchased by: {{ get_full_name(gift_idea.bought_by) }}</p>
                         {% endif %}
                         
                     </div>
