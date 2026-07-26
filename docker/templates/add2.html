@@ -259,16 +259,16 @@ function addCustomField() {
                     </select>
                 </div>
                 <div class="mb-4">
+                    <label for="link" class="block sec-text font-bold">Link (optional). It will try to find the image and title automatically:</label>
+                    <input type="url" name="link" id="link" class="border inputer rounded py-2 px-3 w-full">
+                </div>
+                <div class="mb-4">
                     <label for="name" class="block sec-text font-bold">Title:</label>
                     <input type="text" name="name" id="name" class="border inputer rounded py-2 px-3 w-full" required>
                 </div>
                 <div class="mb-4">
                     <label for="description" class="block sec-text font-bold">Description (Optional):</label>
                     <textarea name="description" id="description" class="border inputer rounded py-2 px-3 w-full"></textarea>
-                </div>
-                <div class="mb-4">
-                    <label for="link" class="block sec-text font-bold">Link (Optional):</label>
-                    <input type="url" name="link" id="link" class="border inputer rounded py-2 px-3 w-full">
                 </div>
                 {% if imgenabled %}
                 <div id="imageContainer" style="width: 32%;"></div> <!-- Display the OG image here -->
