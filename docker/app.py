@@ -2671,8 +2671,12 @@ def fetch_og_image(url):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept-Language': 'en-US,en;q=0.9',
         }
-        response = requests.get(url, headers=headers, verify=False, timeout=10)
+        # Allow redirects to handle shortened URLs like a.co
+        response = requests.get(url, headers=headers, verify=False, timeout=10, allow_redirects=True)
         response.raise_for_status()  # Raise an error for bad status codes
+
+        # Use the final URL after redirection
+        final_url = response.url
         soup = BeautifulSoup(response.text, 'html.parser')
 
         title = None
@@ -2683,7 +2687,7 @@ def fetch_og_image(url):
             title = soup.title.string.strip()
             
         # Amazon specific title fallback
-        if 'amazon' in url.lower() and not title:
+        if 'amazon' in final_url.lower() and not title:
             amazon_title = soup.find('span', id='productTitle')
             if amazon_title:
                 title = amazon_title.text.strip()
@@ -2696,7 +2700,7 @@ def fetch_og_image(url):
             image_url = og_image.get('content')
             # Convert relative URL to absolute URL if necessary
             if not image_url.startswith('http'):
-                image_url = urljoin(url, image_url)
+                image_url = urljoin(final_url, image_url)
 
         # Fallback to twitter:image if og:image is not found
         if not image_url:
@@ -2704,7 +2708,7 @@ def fetch_og_image(url):
             if twitter_image:
                 image_url = twitter_image.get('content')
                 if not image_url.startswith('http'):
-                    image_url = urljoin(url, image_url)
+                    image_url = urljoin(final_url, image_url)
 
         # Fallback to image_src if og:image and twitter:image are not found
         if not image_url:
@@ -2712,16 +2716,16 @@ def fetch_og_image(url):
             if image_src:
                 image_url = image_src.get('href')
                 if not image_url.startswith('http'):
-                    image_url = urljoin(url, image_url)
+                    image_url = urljoin(final_url, image_url)
         
         # Amazon-specific fallback: look for their primary product image IDs
-        if not image_url and 'amazon' in url.lower():
+        if not image_url and 'amazon' in final_url.lower():
             amazon_img = soup.find('img', id='landingImage') or soup.find('img', id='imgBlkFront')
             if amazon_img:
                 image_url = amazon_img.get('data-old-hires') or amazon_img.get('src')
                 if image_url and not image_url.startswith('data:'):
                     if not image_url.startswith('http'):
-                        image_url = urljoin(url, image_url)
+                        image_url = urljoin(final_url, image_url)
 
         return {'image_url': image_url, 'title': title}
     except Exception as e:
