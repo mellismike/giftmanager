@@ -632,98 +632,6 @@ def register():
     # GET request - show registration form
     return render_template('register.html', joining_code=joining_code)
 
-
-@app.route('/add2/', methods=['GET', 'POST'])
-@login_required
-def add2():
-    # Load data from JSON files
-    gift_ideas_data = load_gift_ideas()
-    users = load_users()
-
-    # Get the current user's information
-    current_user = session['username']
-    current_user_data = next((user for user in users if user["username"] == current_user), None)
-
-    if not current_user_data:
-        flash("Current user not found.", "danger")
-        return redirect(url_for('dashboard'))
-
-    # Get the current user's groups (default to empty list if not present)
-    current_user_groups = current_user_data.get("groups", [])
-
-    # Filter the user list based on groups
-    if not current_user_groups:
-        # If the current user has no groups, allow them to see all users
-        user_list = [
-            {"full_name": user["full_name"], "username": user["username"]}
-            for user in users
-            if not user.get('guest')
-        ]
-    else:
-        # Filter the user list to include only those in the current user's groups
-        user_list = [
-            {"full_name": user["full_name"], "username": user["username"]}
-            for user in users
-            if not user.get("groups") or any(group in user.get("groups", []) for group in current_user_groups)
-            and not user.get('guest')
-        ]
-
-    if request.method == 'POST':
-        # Handle the form submission, process the data, and add the idea
-        user = request.form['user']
-        name = request.form['name']
-        description = request.form.get('description', '')
-        link = request.form.get('link', '')
-        value = request.form.get('value', None)  # Optional field
-        image_path = request.form.get('imagePath', '')  # Get the image path from the form
-
-        # Retrieve the logged-in user's username
-        added_by = session.get('username')
-
-        # Find the largest gift idea ID
-        largest_gift_idea_id = max((idea['gift_idea_id'] for idea in gift_ideas_data), default=0)
-
-
-        # Process custom fields from the form
-        custom_fields = {}
-        # Get all form keys that start with 'custom_field_key_'
-        for key in request.form.keys():
-            if key.startswith('custom_field_key_'):
-                field_num = key.split('_')[-1]
-                field_key = request.form.get(f'custom_field_key_{field_num}', '').strip()
-                field_value = request.form.get(f'custom_field_value_{field_num}', '').strip()
-                
-                if field_key and field_value:  # Only add if both key and value are provided
-                    custom_fields[field_key] = field_value
-
-        # Create a new idea object
-        new_idea = {
-            'user_id': user,
-            'gift_idea_id': largest_gift_idea_id + 1,
-            'gift_name': name,
-            'description': description,
-            'link': link,
-            'value': value,
-            'added_by': added_by,  # Track who added the idea
-            'bought_by': None,  # Initialize as not bought
-            'image_path': image_path,  # Store the image URL here
-            'custom_fields': custom_fields,  # Add custom fields
-            'last_updated': datetime.now().isoformat()  # Set initial last_updated timestamp
-        }
-
-        # Append the new idea to the list
-        gift_ideas_data.append(new_idea)
-
-        # Save the updated ideas back to the file
-        save_gift_ideas(gift_ideas_data)
-
-        
-        # Redirect to the user's gift ideas page
-        return redirect(url_for('user_gift_ideas', selected_user_id=user))
-    imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
-    # Render the "Add Idea" page with the filtered user list
-    return render_template('add2.html', user_list=user_list, imgenabled=imgenabled)
-
 @app.route('/need_restart', methods=['GET'])
 def need_restart():
     if os.getenv("SECRET_KEY") in [None, '']:
@@ -769,8 +677,7 @@ def add_idea(selected_user_id):
 
     if request.method == 'POST':
         # Handle the form submission
-        user = request.form['user']
-        name = request.form['name']
+        name = request.form['name'] # The user is now taken from the URL
         description = request.form.get('description', '')
         link = request.form.get('link', '')
         value = request.form.get('value', None)  # Optional field
@@ -797,7 +704,7 @@ def add_idea(selected_user_id):
 
         # Create a new idea object
         new_idea = {
-            'user_id': user,
+            'user_id': selected_user_id,
             'gift_idea_id': largest_gift_idea_id + 1,
             'gift_name': name,
             'description': description,
@@ -816,9 +723,9 @@ def add_idea(selected_user_id):
         # Save the updated gift ideas back to the file
         save_gift_ideas(gift_ideas_data)
 
-        # Flash success message and redirect
-        flash(f'Idea "{name}" added for user {user} by {added_by}!', 'success')
-        return redirect(url_for('user_gift_ideas', selected_user_id=user))
+        # Flash success message and redirect to the user's list
+        flash(f'Idea "{name}" added for user {get_full_name(selected_user_id)} by {added_by}!', 'success')
+        return redirect(url_for('user_gift_ideas', selected_user_id=selected_user_id))
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     # Render the "Add Idea" page with the user list, gift ideas, and the selected user as default
     return render_template('add_idea.html', user_list=user_list, gift_ideas=gift_ideas_data, default_user=selected_user_id, imgenabled=imgenabled)
