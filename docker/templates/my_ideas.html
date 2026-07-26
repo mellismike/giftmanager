@@ -319,6 +319,13 @@
                             <img src="{{ url_for('static', filename='icons/link.svg') }}" alt="Open Link Icon" class="h-5 w-5">
                         </a>
                         {% endif %}
+                        {% if not gift_idea.bought_by %}
+                        <button class="bg-green-500 text-white px-3 py-1 rounded mark-own-as-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                            I purchased this item
+                        </button>
+                        {% else %}
+                        <p class="text-green-500">Purchased by: {{ get_full_name(gift_idea.bought_by) }}</p>
+                        {% endif %}
                         
                     </div>
 
@@ -531,6 +538,22 @@
                 }
             });
         });
+
+        // Mark own idea as bought
+        document.querySelectorAll('.mark-own-as-bought-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const ideaId = button.getAttribute('data-idea-id');
+                markOwnIdeaAsBought(ideaId);
+            });
+        });
+
+        function markOwnIdeaAsBought(ideaId) {
+            fetch(`/mark_as_bought/${ideaId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ anonymous: false }) // On my_ideas, it's never anonymous
+            }).then(() => location.reload());
+        }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
