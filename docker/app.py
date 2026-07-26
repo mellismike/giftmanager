@@ -1352,6 +1352,7 @@ def my_ideas():
     reordering = read_env_variable('REORDERING', 'true').lower() == 'true'
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     # Check if there are no ideas and redirect to a different page
+    hide_purchaser = read_env_variable('HIDE_PURCHASER', 'user_choice')
     if not active_ideas and not archived_ideas:
         flash('You haven\'t added any gift ideas.', 'info')
         return redirect(url_for('noidea'))
@@ -1360,7 +1361,7 @@ def my_ideas():
         if 'custom_fields' not in idea:
             idea['custom_fields'] = {}
 
-    return render_template('my_ideas.html', my_gift_ideas=active_ideas, archived_ideas=archived_ideas, reordering=reordering, imgenabled=imgenabled, is_kid=is_kid)
+    return render_template('my_ideas.html', my_gift_ideas=active_ideas, archived_ideas=archived_ideas, reordering=reordering, imgenabled=imgenabled, is_kid=is_kid, hide_purchaser=hide_purchaser)
 
 @app.route('/archive_purchased', methods=['POST'])
 @login_required
