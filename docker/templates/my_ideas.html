@@ -269,8 +269,8 @@
                         <span class="drag-handle hidden">☰</span>
                         <input type="number" class="priority-input hidden border border-gray-300 rounded p-1 inputer" value="{{ gift_idea.priority }}" min="1" style="width: 3rem; text-align: center; margin-right: 1rem;"> 
                     </div>
-                    <div class="flex w-full items-start justify-between">
-                        <div style="width: 60%;" class="text-left"> <!-- 60% width, left-justified -->
+                    <div class="flex w-full items-start">
+                        <div style="width: 60%;" class="pr-4"> <!-- Column 1: Details -->
                         <h2 class="text-lg font-semibold">{{ gift_idea.gift_name }}</h2>
                         {% if gift_idea.get('custom_fields') %}
                             <div class="custom-fields flex flex-wrap gap-1 mt-1 mb-1">
@@ -294,7 +294,7 @@
                             {% endif %}
                         </div>
 
-                        <div style="width: 25%;" class="flex justify-end"> <!-- 25% width, right-justified -->
+                        <div style="width: 25%;" class="flex justify-end pr-4"> <!-- Column 2: Image -->
                             {% if imgenabled and gift_idea.image_path %}
                                 <div class="divimage">
                                     <img src="{{ gift_idea.image_path }}" alt="OG Image" class="w-16 h-16 object-cover rounded-lg shadow-sm image">
@@ -302,10 +302,10 @@
                             {% endif %}
                         </div>
 
-                        <div style="width: 15%;" class="flex justify-end"> <!-- 15% width, right-justified -->
+                        <div style="width: 15%;" class="flex justify-end"> <!-- Column 3: Actions -->
                             <div class="relative inline-block text-left">
                                 <div>
-                                    <button type="button" class="inline-flex items-center justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" onclick="toggleDropdown(this)" style="background-color: var(--card-bg-color);">
+                                    <button type="button" class="inline-flex items-center justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" onclick="toggleDropdown(this)" style="background-color: var(--card-bg-color); color: var(--text-color);">
                                         Actions
                                         <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
