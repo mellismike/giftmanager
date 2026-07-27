@@ -301,32 +301,43 @@
                         </div>
                     {% endif %}
 
-                    <div class="idea-actions flex items-center space-x-2 mt-4 sm:mt-0 sm:ml-4">
-                        {% if gift_idea.added_by == session['username'] %}
-                        <button class="bg-red-500 text-white px-3 py-1 rounded delete-idea-button flex justify-center items-center" data-idea-id="{{ gift_idea.gift_idea_id }}">
-                            <img src="{{ url_for('static', filename='icons/delete.svg') }}" alt="Delete Icon" class="h-5 w-5">
-                        </button>
-                        <a href="#" class="bg-blue-500 text-white px-3 py-1 rounded edit-idea-link flex justify-center items-center" data-idea-id="{{ gift_idea.gift_idea_id }}">
-                            <img src="{{ url_for('static', filename='icons/edit.svg') }}" alt="Edit Icon" class="h-5 w-5">
-                        </a>
-                        {% endif %}
-                        {% if gift_idea.link %}
-                        {% set link = gift_idea.link %}
-                        {% if not link.startswith('http://') and not link.startswith('https://') %}
-                        {% set link = 'https://' + link %}
-                        {% endif %}
-                        <a href="{{ link }}" target="_blank" class="bg-blue-500 text-white px-3 py-1 rounded flex justify-center items-center open-link-button">
-                            <img src="{{ url_for('static', filename='icons/link.svg') }}" alt="Open Link Icon" class="h-5 w-5">
-                        </a>
-                        {% endif %}
-                        {% if gift_idea.bought_by == session['username'] %}
-                        <p class="text-green-500">Purchased by: Me</p>
-                        {% else %}
-                        <button class="bg-green-500 text-white px-3 py-1 rounded mark-own-as-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
-                            I purchased this item
-                        </button>
-                        {% endif %}
-                        
+                    <div class="relative inline-block text-left">
+                        <div>
+                            <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" onclick="toggleDropdown(this)">
+                                <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-10">
+                            <div class="py-1" role="menu" aria-orientation="vertical">
+                                {% if gift_idea.added_by == session['username'] %}
+                                <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 delete-idea-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                    <img src="{{ url_for('static', filename='icons/delete.svg') }}" alt="Delete" class="h-5 w-5 inline-block mr-3">Delete Item
+                                </button>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-idea-link" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                    <img src="{{ url_for('static', filename='icons/edit.svg') }}" alt="Edit" class="h-5 w-5 inline-block mr-3">Edit Item
+                                </a>
+                                {% endif %}
+                                {% if gift_idea.link %}
+                                    {% set link = gift_idea.link %}
+                                    {% if not link.startswith('http://') and not link.startswith('https://') %}
+                                        {% set link = 'https://' + link %}
+                                    {% endif %}
+                                <a href="{{ link }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <img src="{{ url_for('static', filename='icons/link.svg') }}" alt="Link" class="h-5 w-5 inline-block mr-3">Open Link
+                                </a>
+                                {% endif %}
+                                {% if gift_idea.bought_by == session['username'] %}
+                                <span class="block px-4 py-2 text-sm text-green-600">Purchased by: Me</span>
+                                {% else %}
+                                <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mark-own-as-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                    <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Purchase" class="h-5 w-5 inline-block mr-3">I Purchased This Item
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
 
                 </li>
@@ -539,6 +550,19 @@
             });
         });
 
+        function toggleDropdown(button) {
+            const dropdown = button.parentElement.nextElementSibling;
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdowns when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.matches('.inline-flex, .inline-flex *')) {
+                document.querySelectorAll('.origin-top-right').forEach(dropdown => {
+                    dropdown.classList.add('hidden');
+                });
+            }
+        }
         // Mark own idea as bought
         document.querySelectorAll('.mark-own-as-bought-button').forEach(button => {
             button.addEventListener('click', () => {
