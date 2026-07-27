@@ -263,7 +263,7 @@
             {% endif %}
             <ul id="ideasList" class="space-y-4">
                 {% for gift_idea in my_gift_ideas %}
-                <li class="idea-item bg-white p-4 shadow-md rounded-lg flex flex-col sm:flex-row items-start sm:items-center" style="background-color: var(--card-bg-color);" data-idea-id="{{ gift_idea.gift_idea_id }}" data-priority="{{ gift_idea.priority }}">
+                <li class="idea-item bg-white p-4 shadow-md rounded-lg flex justify-between items-center" style="background-color: var(--card-bg-color);" data-idea-id="{{ gift_idea.gift_idea_id }}" data-priority="{{ gift_idea.priority }}">
                     <span class="priority-number">{{ gift_idea.priority }}</span>
                     <span class="drag-handle hidden">☰</span>
                     <input type="number" class="priority-input hidden border border-gray-300 rounded p-1 inputer" value="{{ gift_idea.priority }}" min="1" style="width: 3rem; text-align: center; margin-right: 1rem;"> 
@@ -292,50 +292,52 @@
                         </div>
                     </div>
 
-                    {% if imgenabled %}
-                        <div class="divimage">
-                            <!-- Display image if available -->
-                            {% if gift_idea.image_path %}
-                                <img src="{{ gift_idea.image_path }}" alt="OG Image" class="w-16 h-16 object-cover rounded-lg shadow-sm image">
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
-                    <div class="relative inline-block text-left">
-                        <div>
-                            <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" onclick="toggleDropdown(this)">
-                                <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-10">
-                            <div class="py-1" role="menu" aria-orientation="vertical">
-                                {% if gift_idea.added_by == session['username'] %}
-                                <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 delete-idea-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
-                                    <img src="{{ url_for('static', filename='icons/delete.svg') }}" alt="Delete" class="h-5 w-5 inline-block mr-3">Delete Item
-                                </button>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-idea-link" data-idea-id="{{ gift_idea.gift_idea_id }}">
-                                    <img src="{{ url_for('static', filename='icons/edit.svg') }}" alt="Edit" class="h-5 w-5 inline-block mr-3">Edit Item
-                                </a>
+                    <div class="flex items-center space-x-4">
+                        {% if imgenabled %}
+                            <div class="divimage">
+                                <!-- Display image if available -->
+                                {% if gift_idea.image_path %}
+                                    <img src="{{ gift_idea.image_path }}" alt="OG Image" class="w-16 h-16 object-cover rounded-lg shadow-sm image">
                                 {% endif %}
-                                {% if gift_idea.link %}
-                                    {% set link = gift_idea.link %}
-                                    {% if not link.startswith('http://') and not link.startswith('https://') %}
-                                        {% set link = 'https://' + link %}
+                            </div>
+                        {% endif %}
+
+                        <div class="relative inline-block text-left">
+                            <div>
+                                <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" onclick="toggleDropdown(this)">
+                                    <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-10">
+                                <div class="py-1" role="menu" aria-orientation="vertical">
+                                    {% if gift_idea.added_by == session['username'] %}
+                                    <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 delete-idea-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                        <img src="{{ url_for('static', filename='icons/delete.svg') }}" alt="Delete" class="h-5 w-5 inline-block mr-3">Delete Item
+                                    </button>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-idea-link" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                        <img src="{{ url_for('static', filename='icons/edit.svg') }}" alt="Edit" class="h-5 w-5 inline-block mr-3">Edit Item
+                                    </a>
                                     {% endif %}
-                                <a href="{{ link }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <img src="{{ url_for('static', filename='icons/link.svg') }}" alt="Link" class="h-5 w-5 inline-block mr-3">Open Link
-                                </a>
-                                {% endif %}
-                                {% if gift_idea.bought_by == session['username'] %}
-                                <span class="block px-4 py-2 text-sm text-green-600">Purchased by: Me</span>
-                                {% else %}
-                                <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mark-own-as-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
-                                    <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Purchase" class="h-5 w-5 inline-block mr-3">I Purchased This Item
-                                </button>
-                                {% endif %}
+                                    {% if gift_idea.link %}
+                                        {% set link = gift_idea.link %}
+                                        {% if not link.startswith('http://') and not link.startswith('https://') %}
+                                            {% set link = 'https://' + link %}
+                                        {% endif %}
+                                    <a href="{{ link }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <img src="{{ url_for('static', filename='icons/link.svg') }}" alt="Link" class="h-5 w-5 inline-block mr-3">Open Link
+                                    </a>
+                                    {% endif %}
+                                    {% if gift_idea.bought_by == session['username'] %}
+                                    <span class="block px-4 py-2 text-sm text-green-600">Purchased by: Me</span>
+                                    {% else %}
+                                    <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mark-own-as-bought-button" data-idea-id="{{ gift_idea.gift_idea_id }}">
+                                        <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Purchase" class="h-5 w-5 inline-block mr-3">I Purchased This Item
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
