@@ -267,7 +267,7 @@
                     <span class="priority-number">{{ gift_idea.priority }}</span>
                     <span class="drag-handle hidden">☰</span>
                     <input type="number" class="priority-input hidden border border-gray-300 rounded p-1 inputer" value="{{ gift_idea.priority }}" min="1" style="width: 3rem; text-align: center; margin-right: 1rem;"> 
-                    <div class="flex-1">
+                    <div style="width: 60%;">
                         <h2 class="text-lg font-semibold">{{ gift_idea.gift_name }}</h2>
                         {% if gift_idea.get('custom_fields') %}
                             <div class="custom-fields flex flex-wrap gap-1 mt-1 mb-1">
