@@ -36,9 +36,15 @@ app.config['AVATAR_DIR'] = Path(app.config['DATA'], 'avatars')
 
 app.config['AVATAR_CLAIM_TIMEOUT'] = 3600 # in seconds
 
-mailjet_api_key = os.getenv("MAILJET_API_KEY")
-mailjet_api_secret = os.getenv("MAILJET_API_SECRET")
-mailjet = Client(auth=(mailjet_api_key, mailjet_api_secret), version='v3.1')
+def get_mailjet_client():
+    """Create a Mailjet client only when credentials are configured.
+    Newer mailjet_rest versions raise on empty credentials, so this must not run at import time."""
+    api_key = read_env_variable("MAILJET_API_KEY") or os.getenv("MAILJET_API_KEY")
+    api_secret = read_env_variable("MAILJET_API_SECRET") or os.getenv("MAILJET_API_SECRET")
+    if not api_key or not api_secret:
+        return None
+    return Client(auth=(api_key, api_secret), version='v3.1')
+
 ph = PasswordHasher()
 
 
@@ -810,6 +816,10 @@ def send_email_to_buyer_via_mailjet(buyer_username, idea_name, message_subject):
                     ]
                 }
 
+                mailjet = get_mailjet_client()
+                if mailjet is None:
+                    print("Mailjet not configured. Skipping email notification.")
+                    return True
                 response = mailjet.send.create(data=data)
 
                 if response.status_code == 200:
