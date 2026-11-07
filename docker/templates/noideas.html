@@ -162,7 +162,7 @@
     <main>
         <h1>This person lacks imagination, help them!</h1>
         <img class="mec" src="{{ url_for('static', filename='icons/nope.jpg') }}" alt="No gift ideas image">
-        <div class="user-card-button" onclick="location.href='{{ url_for('add2') }}'">
+        <div class="user-card-button" onclick="location.href='{{ url_for('add_idea', selected_user_id=selected_user_id) }}'">
             <p class="button-text">Add ideas</p>
         </div>
     </main>

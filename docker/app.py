@@ -1195,7 +1195,7 @@ def user_gift_ideas(selected_user_id):
     # Check if there are no ideas and redirect to the NOIDEA page
     if not user_gift_ideas and not archived_ideas:
         flash('No gift ideas for this user.', 'info')
-        return redirect(url_for('noidea'))
+        return redirect(url_for('noidea', selected_user_id=selected_user_id))
     
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     hide_purchaser = read_env_variable('HIDE_PURCHASER', 'user_choice')
@@ -1372,7 +1372,8 @@ def update_order():
 @login_required
 @guest_allowed
 def noidea():
-    return render_template('noideas.html')
+    selected_user_id = request.args.get('selected_user_id') or session.get('username')
+    return render_template('noideas.html', selected_user_id=selected_user_id)
 
 
 # Generate avatar
